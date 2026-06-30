@@ -33,17 +33,17 @@ The solution provides three central components designed for real-time operation 
 ### Component A: Interactive Control Center & Network Topology
 Operators can inspect the absolute relationship layout of the entire EV ecosystem using Cytoscape.js. Every node (Supplier, Battery, Vehicle, Charger, Service Center) is color-coded with dynamic metadata popups showing its live state, and lines denote operational dependencies.
 
-![EVsphere Network Topology](/C:/Users/OMEN/.gemini/antigravity/brain/5f4ec705-8db1-46b1-be1e-779b7b165cf1/media__1782845255202.png)
+![EVsphere Network Topology](src/flask_app/static/images/topology.png)
 
 ### Component B: Geospatial Mapping
 A dark-themed Leaflet-based geospatial display plots physical locations of chargers, service centers, batteries, and supplier hubs, filtering nodes instantly based on their operational profiles.
 
-![Geospatial Digital Twin Map](/C:/Users/OMEN/.gemini/antigravity/brain/5f4ec705-8db1-46b1-be1e-779b7b165cf1/media__1782845263243.png)
+![Geospatial Digital Twin Map](src/flask_app/static/images/map.png)
 
 ### Component C: Failure Cascade Simulator
 A custom impact propagation engine that utilizes Sankey diagrams to map supply chain and operational risks. Operators select a seed node, configure failure probability, and run simulations to see downstream impacts and calculated financial losses.
 
-![Failure Cascade Simulator](/C:/Users/OMEN/.gemini/antigravity/brain/5f4ec705-8db1-46b1-be1e-779b7b165cf1/media__1782845270020.png)
+![Failure Cascade Simulator](src/flask_app/static/images/cascade.png)
 
 ---
 
