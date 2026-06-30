@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <div class="d-flex align-items-center mb-3">
+    <div>
+      <h2 class="mb-0 fw-bold">🎯 Failure Cascade Simulator</h2>
+      <p class="text-muted-ev mb-0" style="font-size:0.82rem;">Trace propagation of failure from any seed node through the supply chain</p>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- ── Left: Controls ─────────────────────── -->
+    <div class="col-lg-3 col-md-4">
+      <div class="ev-card">
+        <div class="ev-card-header"><span class="text-cyan">⚙️ Simulation Parameters</span></div>
+        <div class="ev-card-body">
+
+          <div class="mb-3">
+            <label class="ev-label">Seed Node</label>
+            <select class="ev-select" id="seed-select">
+              <option value="Supplier_12">Supplier_12</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="ev-label">Node Type</label>
+            <select class="ev-select" id="node-type">
+              <option value="Supplier">Supplier</option>
+              <option value="Battery">Battery</option>
+              <option value="Vehicle">Vehicle</option>
+              <option value="Charger">Charger</option>
+              <option value="ServiceCenter">Service Center</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="ev-label">Failure Probability: <span id="prob-disp" class="text-cyan">0.50</span></label>
+            <input type="range" id="failure-prob" min="0.05" max="1.0" step="0.05" value="0.5">
+          </div>
+
+          <div class="mb-3">
+            <label class="ev-label">Cascade Depth</label>
+            <select class="ev-select" id="cascade-depth">
+              <option value="2">2 Hops</option>
+              <option value="3" selected>3 Hops</option>
+              <option value="4">4 Hops</option>
+              <option value="5">5 Hops</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="ev-label">Time Horizon</label>
+            <select class="ev-select" id="time-horizon">
+              <option value="24h">24 Hours</option>
+              <option value="7d" selected>7 Days</option>
+              <option value="30d">30 Days</option>
+            </select>
+          </div>
+
+          <button class="ev-btn ev-btn-danger w-100 mb-2" id="btn-simulate">
+            🚨 Run Simulation
+          </button>
+          <button class="ev-btn ev-btn-outline w-100" id="btn-clear">↺ Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right: Results ─────────────────────── -->
+    <div class="col-lg-9 col-md-8">
+
+      <!-- Metrics Row -->
+      <div class="row g-2 mb-3" id="metrics-row" style="display:none!important;">
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-value" id="r-loss">—</div>
+            <div class="metric-label">Revenue Loss (₹)</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-value text-orange" id="r-nodes">—</div>
+            <div class="metric-label">Nodes Affected</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-value text-purple" id="r-crit">—</div>
+            <div class="metric-label">Criticality Index</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-value text-cyan" id="r-prob">—</div>
+            <div class="metric-label">Cascade Probability</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sankey Chart -->
+      <div class="ev-card">
+        <div class="ev-card-header">
+          <span>📊 Impact Propagation Sankey</span>
+          <button class="ev-btn ev-btn-outline" id="btn-export-png" style="font-size:0.75rem;padding:0.25rem 0.6rem;display:none;">↓ PNG</button>
+        </div>
+        <div class="ev-card-body p-0">
+          <div id="sankey-chart" style="min-height:420px; display:flex; align-items:center; justify-content:center;">
+            <div style="text-align:center; color:var(--text-muted);">
+              <div style="font-size:2rem; margin-bottom:8px;">🎯</div>
+              <div style="font-size:0.85rem;">Set parameters and click <b style="color:var(--accent-cyan);">Run Simulation</b> to visualise the failure cascade.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const probSlider  = document.getElementById('failure-prob');
+  const probDisp    = document.getElementById('prob-disp');
+  const seedSel     = document.getElementById('seed-select');
+  const btn         = document.getElementById('btn-simulate');
+  const clearBtn    = document.getElementById('btn-clear');
+  const chartDiv    = document.getElementById('sankey-chart');
+  const metricsRow  = document.getElementById('metrics-row');
+  const exportBtn   = document.getElementById('btn-export-png');
+
+  probSlider.addEventListener('input', () => {
+    probDisp.textContent = parseFloat(probSlider.value).toFixed(2);
+  });
+
+  // Load seed nodes from graph API
+  fetch('/api/graph')
+    .then(r => r.json())
+    .then(data => {
+      const nodes = data.nodes || [];
+      if (nodes.length) {
+        seedSel.innerHTML = '';
+        nodes.forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n.data.id;
+          opt.textContent = n.data.label || n.data.id;
+          seedSel.appendChild(opt);
+        });
+      }
+    }).catch(() => {});
+
+  btn.addEventListener('click', function() {
+    const seed  = seedSel.value;
+    const type  = document.getElementById('node-type').value;
+    const prob  = parseFloat(probSlider.value);
+    const depth = parseInt(document.getElementById('cascade-depth').value);
+    const horiz = document.getElementById('time-horizon').value;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Simulating…';
+    chartDiv.innerHTML = '<div class="loading-overlay"><div class="ev-spinner"></div><span>Running cascade simulation…</span></div>';
+    metricsRow.style.setProperty('display','none','important');
+
+    fetch('/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ seed_node: seed, node_type: type, failure_prob: prob, depth: depth, time_horizon: horiz })
+    })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => {
+      const pd = data.plot_data;
+      const m  = pd.metrics;
+
+      // Show metrics
+      metricsRow.style.removeProperty('display');
+      document.getElementById('r-loss').textContent  = '₹' + (m.estimated_revenue_loss_inr / 100000).toFixed(1) + 'L';
+      document.getElementById('r-nodes').textContent = m.nodes_affected;
+      document.getElementById('r-crit').textContent  = (m.criticality_index * 100).toFixed(0) + '%';
+      document.getElementById('r-prob').textContent  = (m.cascade_probability * 100).toFixed(0) + '%';
+
+      // Build Sankey with Plotly
+      const nodeNames = pd.sankey_nodes;
+      const links     = pd.links;
+      const nodeMap   = {};
+      nodeNames.forEach((n, i) => nodeMap[n] = i);
+
+      const sankeyColors = [
+        '#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6',
+        '#00bcd4','#e67e22','#1abc9c','#e91e63','#ff5722'
+      ];
+
+      const plotData = [{
+        type: 'sankey',
+        orientation: 'h',
+        node: {
+          pad: 20,
+          thickness: 22,
+          line: { color: 'rgba(255,255,255,0.1)', width: 0.5 },
+          label: nodeNames,
+          color: nodeNames.map((_, i) => sankeyColors[i % sankeyColors.length])
+        },
+        link: {
+          source: links.map(l => nodeMap[l.source] !== undefined ? nodeMap[l.source] : 0),
+          target: links.map(l => nodeMap[l.target] !== undefined ? nodeMap[l.target] : 0),
+          value:  links.map(l => l.value || 1),
+          color:  links.map((_, i) => `hsla(${i * 37 % 360}, 70%, 55%, 0.35)`)
+        }
+      }];
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor:  'rgba(0,0,0,0)',
+        font: { family: 'Inter, sans-serif', color: '#c8d6e5', size: 11 },
+        margin: { l: 20, r: 20, t: 20, b: 20 },
+        height: 420
+      };
+
+      chartDiv.innerHTML = '<div id="plotly-sankey" style="width:100%;height:420px;"></div>';
+      Plotly.newPlot('plotly-sankey', plotData, layout, { responsive: true, displayModeBar: false });
+      exportBtn.style.display = '';
+
+      exportBtn.onclick = () => {
+        Plotly.downloadImage('plotly-sankey', { format: 'png', filename: 'cascade_sankey', width: 1200, height: 600 });
+      };
+    })
+    .catch(err => {
+      chartDiv.innerHTML = '<div class="loading-overlay"><span style="color:var(--accent-red)">⚠ ' + err.message + '</span></div>';
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = '🚨 Run Simulation';
+    });
+  });
+
+  clearBtn.addEventListener('click', () => {
+    chartDiv.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:80px 20px;"><div style="font-size:2rem; margin-bottom:8px;">🎯</div><div style="font-size:0.85rem;">Set parameters and click <b style="color:var(--accent-cyan);">Run Simulation</b>.</div></div>';
+    metricsRow.style.setProperty('display','none','important');
+    exportBtn.style.display = 'none';
+  });
+});
+</script>
+{% endblock %}

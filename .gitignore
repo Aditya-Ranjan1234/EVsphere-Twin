@@ -1,0 +1,27 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+*.egg-info/
+*.egg
+build/
+dist/
+*.manifest
+*.spec
+*.tmp
+*.bak
+*.swp
+.DS_Store
+.idea/
+.vscode/
+# Data files
+/data/raw/
+/data/processed/
+/data/external/
+# Flask static files
+/flask_app/static/
+/flask_app/templates/__pycache__/
+.vercel

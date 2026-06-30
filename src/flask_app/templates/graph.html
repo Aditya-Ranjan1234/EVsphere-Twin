@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <!-- Header Row -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0 fw-bold">🕸️ Supply Chain Network Graph</h2>
+      <p class="text-muted-ev mb-0" style="font-size:0.82rem;">Interactive topology of all nodes and relationships</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <select class="ev-select" id="layout-picker" style="width:auto;font-size:0.8rem;">
+        <option value="cose">Cose (Force)</option>
+        <option value="circle">Circle</option>
+        <option value="breadthfirst">Breadth‑First</option>
+        <option value="concentric">Concentric</option>
+        <option value="grid">Grid</option>
+        <option value="random">Random</option>
+      </select>
+      <button class="ev-btn ev-btn-primary" id="btn-fit">⊞ Fit View</button>
+      <a href="/api/export/json" class="ev-btn ev-btn-outline">↓ JSON</a>
+    </div>
+  </div>
+
+  <!-- Main Graph Card -->
+  <div class="ev-card">
+    <div class="ev-card-header">
+      <div class="d-flex align-items-center gap-3">
+        <span id="graph-status" class="text-muted-ev fw-mono" style="font-size:0.78rem;">Initialising…</span>
+        <span class="status-dot"></span>
+      </div>
+      <div class="d-flex gap-3">
+        <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>Supplier</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div>Battery</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2ecc71"></div>Vehicle</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div>Charger</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>SvcCenter</div>
+      </div>
+    </div>
+    <div id="cy" style="height:580px;"></div>
+  </div>
+
+</div>
+
+<!-- Tooltip -->
+<div class="ev-tooltip" id="graph-tooltip"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const container = document.getElementById('cy');
+  const status    = document.getElementById('graph-status');
+  const tooltip   = document.getElementById('graph-tooltip');
+  let cy;
+
+  const NODE_COLORS = {
+    Supplier:      '#e74c3c',
+    Battery:       '#3498db',
+    Vehicle:       '#2ecc71',
+    Charger:       '#f39c12',
+    ServiceCenter: '#9b59b6',
+    default:       '#00bcd4'
+  };
+
+  function getColor(label) {
+    if (!label) return NODE_COLORS.default;
+    for (const [k,v] of Object.entries(NODE_COLORS)) {
+      if (label.toLowerCase().includes(k.toLowerCase())) return v;
+    }
+    return NODE_COLORS.default;
+  }
+
+  container.innerHTML = '<div class="loading-overlay"><div class="ev-spinner"></div><span>Fetching graph from Neo4j…</span></div>';
+  status.textContent = 'Loading…';
+
+  fetch('/api/graph')
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      container.innerHTML = '';
+      const nodes = data.nodes || [];
+      const edges = data.edges || [];
+      status.textContent = `${nodes.length} nodes · ${edges.length} edges`;
+
+      cy = cytoscape({
+        container: container,
+        elements: { nodes: nodes, edges: edges },
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'background-color': ele => getColor(ele.data('label')),
+              'color': '#fff',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'font-family': 'Inter, sans-serif',
+              'font-size': '10px',
+              'font-weight': '600',
+              'width': '56px',
+              'height': '56px',
+              'border-width': 2,
+              'border-color': 'rgba(255,255,255,0.15)',
+              'text-wrap': 'wrap',
+              'text-max-width': '64px',
+              'transition-property': 'background-color, border-color, width, height, opacity',
+              'transition-duration': '0.25s'
+            }
+          },
+          {
+            selector: 'node:selected',
+            style: {
+              'border-color': '#fff',
+              'border-width': 4,
+              'width': '68px',
+              'height': '68px',
+              'z-index': 10
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 1.8,
+              'line-color': 'rgba(100,180,220,0.35)',
+              'target-arrow-color': 'rgba(100,180,220,0.5)',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'font-size': '9px',
+              'color': '#7ab8d4',
+              'label': 'data(label)',
+              'text-rotation': 'autorotate',
+              'text-margin-y': -8,
+              'text-opacity': 0.85
+            }
+          },
+          {
+            selector: 'edge:selected',
+            style: { 'line-color': '#00d2ff', 'target-arrow-color': '#00d2ff', 'width': 3 }
+          }
+        ],
+        layout: {
+          name: 'cose',
+          animate: true,
+          animationDuration: 800,
+          padding: 40,
+          nodeRepulsion: 8000,
+          idealEdgeLength: 140,
+          edgeElasticity: 0.75,
+          gravity: 0.6
+        },
+        wheelSensitivity: 0.3
+      });
+
+      // Tooltips
+      cy.on('mouseover', 'node', function(e) {
+        const n = e.target;
+        tooltip.innerHTML = `<b>${n.data('label')}</b><br>Type: ${n.data('type') || '—'}<br>ID: ${n.data('id')}`;
+        tooltip.style.display = 'block';
+      });
+      cy.on('mousemove', function(e) {
+        tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
+        tooltip.style.top  = (e.originalEvent.clientY + 10) + 'px';
+      });
+      cy.on('mouseout', 'node', () => tooltip.style.display = 'none');
+
+      // Edge tooltips
+      cy.on('mouseover', 'edge', function(e) {
+        const ed = e.target;
+        tooltip.innerHTML = `<b>${ed.data('label') || 'Relationship'}</b><br>${ed.source().data('label')} → ${ed.target().data('label')}`;
+        tooltip.style.display = 'block';
+      });
+      cy.on('mouseout', 'edge', () => tooltip.style.display = 'none');
+    })
+    .catch(err => {
+      container.innerHTML = '<div class="loading-overlay"><span style="color:var(--accent-red)">⚠ ' + err.message + '</span></div>';
+      status.textContent = 'Error';
+    });
+
+  // Layout picker
+  document.getElementById('layout-picker').addEventListener('change', function() {
+    if (!cy) return;
+    cy.layout({ name: this.value, animate: true, padding: 40 }).run();
+  });
+
+  // Fit button
+  document.getElementById('btn-fit').addEventListener('click', () => cy && cy.fit(undefined, 40));
+});
+</script>
+{% endblock %}

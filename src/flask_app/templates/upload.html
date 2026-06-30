@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Data Administration</h2>
+    <p>Upload CSV networks to build the EVSphere Digital Twin graph representation.</p>
+    <div class="card p-4 bg-dark text-white border-secondary">
+        <form action="/api/upload" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="formFile" class="form-label">Choose CSV Dataset File</label>
+                <input class="form-control bg-secondary text-white" type="file" name="file" id="formFile" required>
+            </div>
+            <button type="submit" class="btn btn-success">Ingest Network Dataset</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tata InnoVent | Supplier &amp; Battery Risk Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#006268",
+                    "surface-container-high": "#252b31",
+                    "primary-fixed": "#d2e4ff",
+                    "surface-container-low": "#161c22",
+                    "on-tertiary-container": "#00e4f1",
+                    "tertiary": "#00dbe7",
+                    "on-secondary-container": "#725f00",
+                    "on-tertiary-fixed-variant": "#004f54",
+                    "tertiary-fixed-dim": "#00dbe7",
+                    "inverse-surface": "#dde3ec",
+                    "primary-fixed-dim": "#a1c9ff",
+                    "secondary-fixed-dim": "#e9c400",
+                    "error-container": "#93000a",
+                    "outline-variant": "#414750",
+                    "on-background": "#dde3ec",
+                    "on-surface-variant": "#c1c7d2",
+                    "on-secondary-fixed-variant": "#544600",
+                    "secondary-fixed": "#ffe16d",
+                    "surface-bright": "#343a41",
+                    "on-error-container": "#ffdad6",
+                    "inverse-on-surface": "#2b3138",
+                    "surface-container-highest": "#2f353c",
+                    "on-primary-container": "#afd1ff",
+                    "on-primary-fixed-variant": "#00487f",
+                    "on-error": "#690005",
+                    "primary-container": "#005a9c",
+                    "surface-variant": "#2f353c",
+                    "on-secondary": "#3a3000",
+                    "surface-container-lowest": "#090f15",
+                    "on-primary-fixed": "#001c37",
+                    "tertiary-fixed": "#74f5ff",
+                    "surface": "#0e141a",
+                    "on-tertiary": "#00363a",
+                    "secondary-container": "#ffdb3c",
+                    "on-primary": "#00325a",
+                    "primary": "#a1c9ff",
+                    "outline": "#8b919b",
+                    "surface-dim": "#0e141a",
+                    "secondary": "#fff9ef",
+                    "on-surface": "#dde3ec",
+                    "inverse-primary": "#1261a3",
+                    "on-tertiary-fixed": "#002022",
+                    "error": "#ffb4ab",
+                    "background": "#0e141a",
+                    "surface-tint": "#a1c9ff",
+                    "on-secondary-fixed": "#221b00",
+                    "surface-container": "#1a2027"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "container-max": "1440px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "label-mono": ["JetBrains Mono"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-mono": ["13px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0b1117;
+            color: #dde3ec;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #161e27;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2d3748;
+            border-radius: 2px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .cursor-blink {
+            animation: blink 1s infinite;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 10px rgba(0, 219, 231, 0.2);
+            border: 1px solid #00dbe7;
+        }
+        .ripple-active {
+            background: radial-gradient(circle, rgba(255,180,171,0.15) 0%, transparent 70%);
+        }
+    </style>
+</head>
+<body class="font-body-lg text-on-background">
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-16 bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant fixed top-0 z-50">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary">Tata InnoVent</span>
+<div class="hidden md:flex items-center gap-gutter">
+<nav class="flex gap-6 items-center">
+<span class="font-label-mono text-label-mono text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors cursor-pointer px-2 py-1">Overview</span>
+<span class="font-label-mono text-label-mono text-primary font-bold border-b-2 border-primary pb-1 cursor-pointer">Supplier Risk</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors cursor-pointer px-2 py-1">Vehicle Health</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant font-medium hover:bg-surface-container-high transition-colors cursor-pointer px-2 py-1">Impact Simulator</span>
+</nav>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-surface-container-low px-3 py-1.5 rounded flex items-center gap-2 border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-[18px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-mono font-label-mono w-48 p-0 placeholder:text-outline" placeholder="Search telemetry..." type="text"/>
+</div>
+<button class="bg-secondary-container text-on-secondary-container px-4 py-1.5 rounded font-label-mono text-label-mono font-bold hover:scale-95 transition-all active:scale-90">LLM Assistant</button>
+<div class="flex items-center gap-3 ml-2 border-l border-outline-variant pl-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">monitor_heart</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">account_circle</span>
+</div>
+</div>
+</header>
+<div class="flex h-screen pt-16">
+<!-- SideNavBar (Shared Component) -->
+<aside class="flex flex-col h-full py-gutter bg-surface-container-low dark:bg-surface-container-low border-r border-outline-variant fixed left-0 w-64 hidden md:flex">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-tertiary-container/20 flex items-center justify-center border border-tertiary/30">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">hub</span>
+</div>
+<div>
+<h2 class="font-headline-md text-[16px] text-primary">Digital Twin</h2>
+<p class="font-label-mono text-[11px] text-on-surface-variant uppercase tracking-widest">Neo4j Network</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">factory</span>
+<span class="font-label-mono text-label-mono">Supplier Risk</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">precision_manufacturing</span>
+<span class="font-label-mono text-label-mono">Vehicle Health</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">domain</span>
+<span class="font-label-mono text-label-mono">Infrastructure</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-tertiary bg-tertiary-container/10 border-r-2 border-tertiary transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-mono text-label-mono">Impact Simulator</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-4">
+<button class="w-full bg-primary-container text-on-primary-container py-2.5 rounded font-label-mono text-label-mono font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">description</span>
+                    Generate Report
+                </button>
+<div class="pt-4 border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-mono text-[12px]">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="font-label-mono text-[12px]">Support</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 p-margin-desktop overflow-y-auto bg-surface-container-lowest">
+<!-- Dashboard Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-1">Supplier &amp; Battery Reliability</h1>
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 font-label-mono text-[12px] text-tertiary bg-tertiary-container/10 px-2 py-0.5 rounded border border-tertiary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+                            SYSTEM LIVE: CMAPSS STREAM
+                        </span>
+<span class="font-label-mono text-[12px] text-on-surface-variant">Last analysis: 0.4s ago</span>
+</div>
+</div>
+<div class="flex gap-2">
+<div class="bg-surface-container px-4 py-2 rounded border border-outline-variant text-right">
+<p class="font-label-mono text-[10px] text-outline uppercase">Network Health</p>
+<p class="font-headline-md text-[18px] text-primary">98.2%</p>
+</div>
+<div class="bg-surface-container px-4 py-2 rounded border border-outline-variant text-right">
+<p class="font-label-mono text-[10px] text-outline uppercase">Active Alerts</p>
+<p class="font-headline-md text-[18px] text-error">03</p>
+</div>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="bento-grid">
+<!-- Supplier Risk Matrix -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-low border border-outline-variant p-6 rounded-lg">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-mono text-label-mono text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">factory</span>
+                            SUPPLIER RISK AUDIT (NASA CMAPSS ENGINE)
+                        </h3>
+<div class="flex gap-2">
+<span class="text-[10px] font-label-mono text-outline px-2 border border-outline-variant rounded">ID: SR-9942</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-label-mono text-[12px]">
+<thead>
+<tr class="text-outline border-b border-outline-variant">
+<th class="pb-3 font-medium">SUPPLIER ID</th>
+<th class="pb-3 font-medium">COMPONENT</th>
+<th class="pb-3 font-medium">RUL (EST)</th>
+<th class="pb-3 font-medium">TREND</th>
+<th class="pb-3 font-medium">RISK SCORE</th>
+<th class="pb-3 font-medium">STATUS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30">
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-4 text-on-surface">SUP-CEL-01</td>
+<td class="py-4">Anode Sheets</td>
+<td class="py-4">1,420 cycles</td>
+<td class="py-4">
+<svg class="w-16 h-4" viewbox="0 0 64 16">
+<path d="M0 8 L10 12 L20 6 L30 10 L40 4 L50 8 L64 2" fill="none" stroke="#00dbe7" stroke-width="1.5"></path>
+</svg>
+</td>
+<td class="py-4 font-bold text-tertiary">0.12</td>
+<td class="py-4"><span class="bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded text-[10px]">OPTIMAL</span></td>
+</tr>
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-4 text-on-surface">SUP-LIT-42</td>
+<td class="py-4">Lithium Hydroxide</td>
+<td class="py-4">840 cycles</td>
+<td class="py-4">
+<svg class="w-16 h-4" viewbox="0 0 64 16">
+<path d="M0 4 L10 6 L20 12 L30 14 L40 10 L50 12 L64 15" fill="none" stroke="#ffb4ab" stroke-width="1.5"></path>
+</svg>
+</td>
+<td class="py-4 font-bold text-error">0.84</td>
+<td class="py-4"><span class="bg-error-container/20 text-error px-2 py-0.5 rounded text-[10px]">CRITICAL</span></td>
+</tr>
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-4 text-on-surface">SUP-BMS-11</td>
+<td class="py-4">IC Controllers</td>
+<td class="py-4">12,400 hrs</td>
+<td class="py-4">
+<svg class="w-16 h-4" viewbox="0 0 64 16">
+<path d="M0 8 L64 8" fill="none" stroke="#8b919b" stroke-width="1.5"></path>
+</svg>
+</td>
+<td class="py-4 font-bold">0.45</td>
+<td class="py-4"><span class="bg-secondary-container/20 text-secondary-fixed px-2 py-0.5 rounded text-[10px]">NOMINAL</span></td>
+</tr>
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-4 text-on-surface">SUP-SEP-09</td>
+<td class="py-4">Polymer Film</td>
+<td class="py-4">1,100 cycles</td>
+<td class="py-4">
+<svg class="w-16 h-4" viewbox="0 0 64 16">
+<path d="M0 10 L15 12 L30 8 L45 9 L64 14" fill="none" stroke="#ffb4ab" stroke-width="1.5"></path>
+</svg>
+</td>
+<td class="py-4 font-bold text-error">0.72</td>
+<td class="py-4"><span class="bg-error-container/20 text-error px-2 py-0.5 rounded text-[10px]">WARNING</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Battery Health Monitor -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-low border border-outline-variant p-6 rounded-lg flex flex-col">
+<h3 class="font-label-mono text-label-mono text-primary flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined">battery_charging_full</span>
+                        BATTERY ARCHIVE TELEMETRY
+                    </h3>
+<div class="flex-1 flex flex-col justify-center gap-6">
+<div class="relative h-40 w-full flex items-center justify-center">
+<!-- Circular Gauge Placeholder -->
+<svg class="w-32 h-32 transform -rotate-90">
+<circle cx="64" cy="64" fill="none" r="58" stroke="#1f2937" stroke-width="8"></circle>
+<circle cx="64" cy="64" fill="none" r="58" stroke="#00dbe7" stroke-dasharray="364" stroke-dashoffset="60" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-md text-headline-md text-on-surface">84.2%</span>
+<span class="font-label-mono text-[10px] text-outline">SoH AVG</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-highest p-3 rounded border border-outline-variant/30">
+<p class="text-[10px] font-label-mono text-outline mb-1 uppercase">Cycle Life</p>
+<p class="font-label-mono text-tertiary">2,410 / 3k</p>
+</div>
+<div class="bg-surface-container-highest p-3 rounded border border-outline-variant/30">
+<p class="text-[10px] font-label-mono text-outline mb-1 uppercase">Thermal Peak</p>
+<p class="font-label-mono text-secondary-fixed">42.5°C</p>
+</div>
+</div>
+<div class="space-y-2">
+<p class="text-[10px] font-label-mono text-outline uppercase">Degradation Curve</p>
+<div class="h-12 w-full bg-surface-container-highest rounded overflow-hidden relative border border-outline-variant/30">
+<svg class="absolute inset-0 w-full h-full" preserveaspectratio="none">
+<path d="M0 5 L50 10 L100 8 L150 18 L200 25 L250 20 L300 35 L350 32 L400 45" fill="none" stroke="#00dbe7" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+</div>
+<!-- Supply Chain Stress Test -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-low border border-outline-variant p-6 rounded-lg">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-label-mono text-label-mono text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">analytics</span>
+                                SUPPLY CHAIN STRESS TEST
+                            </h3>
+<p class="text-body-sm text-outline mt-1">Simulate tier-1 node failure ripples</p>
+</div>
+<button class="bg-tertiary-container text-on-tertiary-container px-4 py-2 rounded font-label-mono text-label-mono font-bold flex items-center gap-2 hover:brightness-110 active:scale-95" onclick="simulateRipple()">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                            RUN SIMULATION
+                        </button>
+</div>
+<div class="h-64 rounded bg-surface-container-lowest border border-outline-variant relative overflow-hidden flex items-center justify-around" id="simulation-canvas">
+
+<!-- Simulation Nodes -->
+<div class="relative z-10 flex flex-col items-center gap-2 opacity-100 transition-all duration-500" id="node-supplier">
+<div class="w-14 h-14 rounded-full border-2 border-primary bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">factory</span>
+</div>
+<span class="font-label-mono text-[10px]">SUPPLIERS</span>
+</div>
+<div class="w-16 h-0.5 bg-outline-variant relative z-10">
+<div class="absolute top-0 left-0 h-full bg-primary w-0" id="ripple-1"></div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2" id="node-battery">
+<div class="w-14 h-14 rounded-full border-2 border-primary bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">battery_full</span>
+</div>
+<span class="font-label-mono text-[10px]">BATTERY PACK</span>
+</div>
+<div class="w-16 h-0.5 bg-outline-variant relative z-10">
+<div class="absolute top-0 left-0 h-full bg-primary w-0" id="ripple-2"></div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2" id="node-vehicle">
+<div class="w-14 h-14 rounded-full border-2 border-primary bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">electric_car</span>
+</div>
+<span class="font-label-mono text-[10px]">VEHICLES</span>
+</div>
+</div>
+<div class="mt-4 grid grid-cols-3 gap-4 opacity-0 transition-opacity duration-500" id="sim-stats">
+<div class="text-center">
+<p class="text-[10px] font-label-mono text-outline uppercase">Inventory Risk</p>
+<p class="font-headline-md text-[18px] text-error" id="val-inv">0%</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] font-label-mono text-outline uppercase">Production Lag</p>
+<p class="font-headline-md text-[18px] text-error" id="val-lag">0h</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] font-label-mono text-outline uppercase">Est. Revenue Impact</p>
+<p class="font-headline-md text-[18px] text-error" id="val-rev">-$0</p>
+</div>
+</div>
+</div>
+<!-- Live Insight Card (LLM Analysis) -->
+<div class="col-span-12 lg:col-span-5 bg-secondary-container/5 border border-secondary-container/20 p-6 rounded-lg flex flex-col">
+<h3 class="font-label-mono text-label-mono text-secondary-fixed flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined">psychology</span>
+                        AI RISK SYNTHESIS
+                    </h3>
+<div class="flex-1 bg-surface-container-lowest/50 p-4 rounded border border-outline-variant/30 font-body-sm italic text-on-surface-variant relative">
+<div class="absolute top-2 right-2 text-[10px] font-label-mono text-outline flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse"></span>
+                            PROCESSING
+                        </div>
+<p class="leading-relaxed">
+                            "Analyzing the 20% spike in lithium carbonate spot prices against SUP-LIT-42's recent delivery delays. CMAPSS telemetry indicates a 5.2% reduction in cycle efficiency for Batch #881. Recommendation: Pivot 15% of demand to SUP-CEL-01's reserve stock within 24 hours to maintain production uptime."
+                        </p>
+</div>
+<div class="mt-4 flex items-center gap-3">
+<img class="w-10 h-10 rounded-full border border-secondary-fixed/50 object-cover" data-alt="A macro photograph of high-tech lithium battery cells being assembled by robotic arms in a dark, futuristic factory environment. The lighting is dominated by glowing cyan lasers and warm gold accents on metal surfaces. Detailed, technical, professional industrial photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBplX4zT9_t45a8t1q_7babI4dlYwMiSARAYfevKsYCgDiEkxxC3As8ozzP0lC6I6qNoX5IKbgqtpCDVsSndPfoNUHazM75cNzbn7irUWpf1DjlmaQM3wg20c9rMfJ2CdwNhQK9jK7ECRhRWUNgqf8N6HBi2adr7iDxD87eAf1K1U7Tmn6MqHSNVZnBzWjz0aYJNTHguSG13k9LssttD7XwE3y7WXKVWS0SApGItTnmckHtDZbP_rBDbR3wdcPmDrP3YnHvFJI0MX8"/>
+<div>
+<p class="font-label-mono text-[12px] text-secondary-fixed">Strategy Suggestion</p>
+<p class="text-[10px] text-outline">Risk Mitigation Protocol #Alpha-7</p>
+</div>
+<button class="ml-auto bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded font-label-mono text-[11px] font-bold">APPROVE</button>
+</div>
+</div>
+<!-- Agent Logs (Bottom Container) -->
+<div class="col-span-12 bg-[#05070a] border border-outline-variant p-4 rounded-lg">
+<div class="flex justify-between items-center mb-2 border-b border-outline-variant pb-2">
+<h4 class="font-label-mono text-[11px] text-tertiary flex items-center gap-2 uppercase tracking-widest">
+<span class="w-2 h-2 bg-tertiary rounded-full"></span>
+                            Agent_Analyzer_Log_v2.0.4
+                        </h4>
+<div class="flex items-center gap-4 text-[10px] font-label-mono text-outline">
+<span>UPTIME: 142:12:04</span>
+<span>NODE: HYDRA-A1</span>
+</div>
+</div>
+<div class="h-32 overflow-y-auto custom-scrollbar font-label-mono text-[11px] space-y-1 pt-2" id="log-container">
+<p><span class="text-tertiary">[SYSTEM]</span> Initializing supply chain neural net...</p>
+<p><span class="text-tertiary">[INGEST]</span> Scouring global logistics news for "lithium shortage" (Source: Reuters API)...</p>
+<p><span class="text-tertiary">[INGEST]</span> Batch #909 telemetry received. Processing CMAPSS sensor data (T2, T24, T50, P30)...</p>
+<p><span class="text-secondary-fixed">[LLM]</span> Correlating weather delays in Perth port with SUP-LIT-42 lead times.</p>
+<p><span class="text-error">[ALERT]</span> High probability of RUL mismatch in vehicle cluster 4-F.</p>
+<p><span class="text-tertiary">[INFO]</span> Simulator ready for stress-test input...</p>
+<p class="flex items-center gap-1">&gt;<span class="w-1.5 h-3 bg-tertiary cursor-blink"></span></p>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Floating Action Button (Limited context) -->
+<!-- Not visible on sub-pages according to protocol, so omitted -->
+<script>
+        // Log Simulation
+        const logContainer = document.getElementById('log-container');
+        const logs = [
+            "[INGEST] Telemetry stream optimized for low-latency.",
+            "[SYSTEM] Recalculating risk coefficients for Tier-2 suppliers.",
+            "[LLM] Analyzing sentiment: 'Supply chain constraints easing in APAC region'.",
+            "[SYSTEM] Cross-referencing Battery Archive historical data with current cycle...",
+            "[ALERT] Temperature anomaly detected in Cell-Block-7A.",
+            "[INGEST] Updated spot prices: Lithium Hydroxide (+1.4%)",
+            "[SYSTEM] Snapshot taken. Digital twin sync successful."
+        ];
+
+        setInterval(() => {
+            const lastLog = document.querySelector('#log-container p:last-child');
+            const newLog = document.createElement('p');
+            const timestamp = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const logText = logs[Math.floor(Math.random() * logs.length)];
+            newLog.innerHTML = `<span class="text-outline">[${timestamp}]</span> <span class="text-tertiary">[SYNC]</span> ${logText}`;
+            logContainer.insertBefore(newLog, lastLog);
+            
+            if (logContainer.children.length > 15) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }, 4000);
+
+        // Simulation Ripple Logic
+        function simulateRipple() {
+            const nodeSup = document.getElementById('node-supplier');
+            const nodeBat = document.getElementById('node-battery');
+            const nodeVeh = document.getElementById('node-vehicle');
+            const ripple1 = document.getElementById('ripple-1');
+            const ripple2 = document.getElementById('ripple-2');
+            const simStats = document.getElementById('sim-stats');
+            
+            // Reset
+            simStats.style.opacity = '0';
+            nodeSup.classList.remove('border-error', 'text-error', 'glow-cyan');
+            nodeBat.classList.remove('border-error', 'text-error');
+            nodeVeh.classList.remove('border-error', 'text-error');
+            ripple1.style.width = '0';
+            ripple2.style.width = '0';
+
+            // Start animation
+            setTimeout(() => {
+                nodeSup.querySelector('div').classList.add('border-error', 'bg-error-container/20');
+                nodeSup.querySelector('span:last-child').classList.add('text-error');
+                ripple1.style.transition = 'width 1s linear';
+                ripple1.style.width = '100%';
+                ripple1.classList.add('bg-error');
+            }, 200);
+
+            setTimeout(() => {
+                nodeBat.querySelector('div').classList.add('border-error', 'bg-error-container/20');
+                nodeBat.querySelector('span:last-child').classList.add('text-error');
+                ripple2.style.transition = 'width 1s linear';
+                ripple2.style.width = '100%';
+                ripple2.classList.add('bg-error');
+            }, 1200);
+
+            setTimeout(() => {
+                nodeVeh.querySelector('div').classList.add('border-error', 'bg-error-container/20');
+                nodeVeh.querySelector('span:last-child').classList.add('text-error');
+                
+                // Show stats
+                simStats.style.opacity = '1';
+                animateValue("val-inv", 0, 42, "%");
+                animateValue("val-lag", 0, 18, "h");
+                animateValue("val-rev", 0, 1.2, "M");
+            }, 2200);
+        }
+
+        function animateValue(id, start, end, suffix) {
+            const obj = document.getElementById(id);
+            let current = start;
+            const increment = end / 50;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= end) {
+                    obj.textContent = (id === 'val-rev' ? '-$' : '') + end + suffix;
+                    clearInterval(timer);
+                } else {
+                    obj.textContent = (id === 'val-rev' ? '-$' : '') + current.toFixed(1) + suffix;
+                }
+            }, 20);
+        }
+    </script>
+</body></html>

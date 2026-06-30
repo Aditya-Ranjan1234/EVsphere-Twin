@@ -1,0 +1,16 @@
+flask==3.0.3
+jinja2==3.1.4
+pandas==2.2.2
+scikit-learn==1.5.0
+xgboost==2.0.3
+lightgbm==4.6.0
+catboost==1.2.5
+torch==2.12.1
+torch_geometric==2.8.0
+neo4j==6.2.0
+SQLAlchemy==2.0.51
+psycopg2-binary==2.9.12
+python-dotenv==1.0.1
+requests==2.32.3
+tqdm==4.66.5
+plotly==5.22.0

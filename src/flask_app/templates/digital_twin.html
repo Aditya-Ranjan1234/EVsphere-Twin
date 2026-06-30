@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <div class="row g-3">
+
+    <!-- ── Left: Controls ─────────────────────────────── -->
+    <div class="col-lg-3 col-md-4">
+      <div class="ev-card mb-3">
+        <div class="ev-card-header">
+          <span class="text-cyan">Control Center</span>
+          <span class="status-dot"></span>
+        </div>
+        <div class="ev-card-body">
+
+          <div class="section-title">Cascade Simulation</div>
+
+          <div class="mb-3">
+            <label class="ev-label">Seed Node</label>
+            <select class="ev-select" id="control-seed">
+              <option value="">Loading nodes…</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="ev-label">Node Type</label>
+            <select class="ev-select" id="control-type">
+              <option value="Supplier">Supplier</option>
+              <option value="Battery">Battery</option>
+              <option value="Vehicle">Vehicle</option>
+              <option value="Charger">Charger</option>
+              <option value="ServiceCenter">Service Center</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="ev-label">Failure Probability: <span id="prob-val" class="text-cyan">0.50</span></label>
+            <input type="range" id="control-prob" min="0.05" max="1.0" step="0.05" value="0.5">
+          </div>
+
+          <div class="mb-3">
+            <label class="ev-label">Cascade Depth</label>
+            <select class="ev-select" id="control-depth">
+              <option value="2">2 Hops</option>
+              <option value="3" selected>3 Hops</option>
+              <option value="4">4 Hops</option>
+              <option value="5">5 Hops</option>
+            </select>
+          </div>
+
+          <button class="ev-btn ev-btn-danger w-100 mb-2" id="btn-trigger">
+            Trace System Cascade
+          </button>
+          <button class="ev-btn ev-btn-outline w-100" id="btn-reset">
+            Reset View
+          </button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="ev-card">
+        <div class="ev-card-header"><span class="text-cyan">Node Types</span></div>
+        <div class="ev-card-body">
+          <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>Supplier</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div>Battery</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#2ecc71"></div>Vehicle</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div>Charger</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>ServiceCenter</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00bcd4"></div>Unknown</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Centre: Graph Viewport -->
+    <div class="col-lg-6 col-md-8">
+      <div class="ev-card mb-3">
+        <div class="ev-card-header">
+          <span>EVSphere Network Topology</span>
+          <div class="d-flex align-items-center gap-2">
+            <select class="ev-select" id="layout-select" style="width:auto;font-size:0.75rem;padding:0.25rem 0.5rem;">
+              <option value="cose">Cose (Force)</option>
+              <option value="circle">Circle</option>
+              <option value="breadthfirst">Breadth‑First</option>
+              <option value="grid">Grid</option>
+            </select>
+            <span class="status-dot"></span>
+          </div>
+        </div>
+        <div id="cy-viewport" style="height:480px;"></div>
+      </div>
+    </div>
+
+    <!-- Right: Metrics & Log -->
+    <div class="col-lg-3 col-md-12">
+      <div class="ev-card mb-3">
+        <div class="ev-card-header"><span class="text-cyan">Live Metrics</span></div>
+        <div class="ev-card-body">
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <div class="metric-card">
+                <div class="metric-value" id="m-nodes">—</div>
+                <div class="metric-label">Nodes</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="metric-card">
+                <div class="metric-value" id="m-edges">—</div>
+                <div class="metric-label">Edges</div>
+              </div>
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="metric-card">
+                <div class="metric-value text-orange" id="m-affected">—</div>
+                <div class="metric-label">Affected</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="metric-card">
+                <div class="metric-value text-red" id="m-loss">—</div>
+                <div class="metric-label">Loss (₹L)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ev-card">
+        <div class="ev-card-header"><span class="text-cyan">Telemetry Feed</span></div>
+        <div class="ev-card-body p-2">
+          <div class="log-feed" id="risk-feed">
+            <p class="log-info">[INFO] Digital Twin viewport connected.</p>
+            <p class="log-info">[INFO] Fetching topology data…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const feed        = document.getElementById("risk-feed");
+  const triggerBtn  = document.getElementById("btn-trigger");
+  const resetBtn    = document.getElementById("btn-reset");
+  const probSlider  = document.getElementById("control-prob");
+  const probVal     = document.getElementById("prob-val");
+  const layoutSel   = document.getElementById("layout-select");
+  const seedSel     = document.getElementById("control-seed");
+  const cvp         = document.getElementById("cy-viewport");
+  let cy;
+
+  const NODE_COLORS = {
+    Supplier:      '#e74c3c',
+    Battery:       '#3498db',
+    Vehicle:       '#2ecc71',
+    Charger:       '#f39c12',
+    ServiceCenter: '#9b59b6',
+    default:       '#00bcd4'
+  };
+
+  function log(msg, cls = 'log-info') {
+    const p = document.createElement('p');
+    p.className = cls;
+    p.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    feed.appendChild(p);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  probSlider.addEventListener('input', () => {
+    probVal.textContent = parseFloat(probSlider.value).toFixed(2);
+  });
+
+  // ── Load graph from API ─────────────────────────────────
+  cvp.innerHTML = '<div class="loading-overlay"><div class="ev-spinner"></div><span>Loading graph data…</span></div>';
+
+  fetch('/api/graph')
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      cvp.innerHTML = '';
+
+      const nodes = (data.nodes || []);
+      const edges = (data.edges || []);
+
+      // Update metrics
+      document.getElementById('m-nodes').textContent = nodes.length;
+      document.getElementById('m-edges').textContent = edges.length;
+
+      // Populate dropdown
+      seedSel.innerHTML = '';
+      nodes.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n.data.id;
+        opt.textContent = n.data.label || n.data.id;
+        seedSel.appendChild(opt);
+      });
+
+      // Initialise Cytoscape
+      cy = cytoscape({
+        container: cvp,
+        elements: { nodes: nodes, edges: edges },
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'background-color': function(ele) {
+                const t = ele.data('type') || ele.data('label') || '';
+                for (const [key, col] of Object.entries(NODE_COLORS)) {
+                  if (t.includes(key)) return col;
+                }
+                return NODE_COLORS.default;
+              },
+              'color': '#ffffff',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'font-family': 'Inter, sans-serif',
+              'font-size': '10px',
+              'font-weight': '600',
+              'width': '52px',
+              'height': '52px',
+              'border-width': '2px',
+              'border-color': 'rgba(255,255,255,0.2)',
+              'text-wrap': 'wrap',
+              'text-max-width': '60px',
+              'transition-property': 'background-color, border-color, width, height',
+              'transition-duration': '0.3s'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 1.5,
+              'line-color': 'rgba(100,180,220,0.4)',
+              'target-arrow-color': 'rgba(100,180,220,0.6)',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'font-size': '9px',
+              'color': '#7ab8d4',
+              'label': 'data(label)',
+              'text-rotation': 'autorotate',
+              'text-margin-y': -8
+            }
+          },
+          {
+            selector: 'node.highlighted',
+            style: {
+              'background-color': '#ff3366',
+              'border-color': '#ff3366',
+              'border-width': '4px',
+              'width': '64px',
+              'height': '64px',
+              'z-index': 10
+            }
+          },
+          {
+            selector: 'node.affected',
+            style: {
+              'background-color': '#ff9900',
+              'border-color': '#ff9900',
+              'border-width': '3px'
+            }
+          }
+        ],
+        layout: {
+          name: 'cose',
+          animate: true,
+          animationDuration: 600,
+          padding: 30,
+          nodeRepulsion: 6000,
+          idealEdgeLength: 120,
+          edgeElasticity: 0.8
+        },
+        wheelSensitivity: 0.3
+      });
+
+      // Tooltips on hover
+      const tooltip = document.getElementById('ev-tooltip');
+      cy.on('mouseover', 'node', function(e) {
+        const n = e.target;
+        tooltip.innerHTML = `<b>${n.data('label')}</b><br>Type: ${n.data('type') || 'Node'}<br>ID: ${n.data('id')}`;
+        tooltip.style.display = 'block';
+      });
+      cy.on('mousemove', function(e) {
+        tooltip.style.left = (e.originalEvent.clientX + 12) + 'px';
+        tooltip.style.top  = (e.originalEvent.clientY + 12) + 'px';
+      });
+      cy.on('mouseout', 'node', function() { tooltip.style.display = 'none'; });
+
+      log('Graph loaded – ' + nodes.length + ' nodes, ' + edges.length + ' edges.', 'log-ok');
+    })
+    .catch(err => {
+      cvp.innerHTML = '<div class="loading-overlay"><span style="color:var(--accent-red)">Failed to load graph: ' + err.message + '</span></div>';
+      log('Error loading graph: ' + err.message, 'log-error');
+    });
+
+  // ── Layout selector ──────────────────────────────────────
+  layoutSel.addEventListener('change', () => {
+    if (!cy) return;
+    cy.layout({ name: layoutSel.value, animate: true, padding: 30 }).run();
+  });
+
+  // ── Cascade simulation ───────────────────────────────────
+  triggerBtn.addEventListener('click', () => {
+    const seed = seedSel.value;
+    if (!seed) { log('Select a seed node first.', 'log-warn'); return; }
+    const prob  = parseFloat(probSlider.value);
+    const depth = parseInt(document.getElementById('control-depth').value);
+
+    log(`Tracing cascade from "${seed}" (p=${prob}, depth=${depth})…`, 'log-warn');
+    triggerBtn.disabled = true;
+    triggerBtn.textContent = '⏳ Running…';
+
+    if (cy) {
+      cy.nodes().removeClass('highlighted affected');
+    }
+
+    fetch('/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ seed_node: seed, node_type: document.getElementById('control-type').value, failure_prob: prob, depth: depth })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const metrics = data.plot_data && data.plot_data.metrics;
+      if (metrics) {
+        document.getElementById('m-affected').textContent = metrics.nodes_affected;
+        const lossL = (metrics.estimated_revenue_loss_inr / 100000).toFixed(1);
+        document.getElementById('m-loss').textContent = lossL;
+        log(`Impact: ₹${metrics.estimated_revenue_loss_inr.toLocaleString()} | Affected: ${metrics.nodes_affected} nodes | Criticality: ${(metrics.criticality_index * 100).toFixed(0)}%`, 'log-error');
+      }
+
+      // Highlight in graph
+      if (cy) {
+        const seedNode = cy.nodes().filter(n => n.data('id') == seed || n.data('label') == seed);
+        if (seedNode.length) {
+          seedNode.addClass('highlighted');
+          seedNode.neighborhood('node').addClass('affected');
+          cy.animate({ zoom: { level: 1.4, position: seedNode.position() }, duration: 500 });
+        }
+      }
+    })
+    .catch(err => log('Simulation error: ' + err.message, 'log-error'))
+    .finally(() => {
+      triggerBtn.disabled = false;
+      triggerBtn.textContent = 'Trace System Cascade';
+    });
+  });
+
+  // ── Reset ────────────────────────────────────────────────
+  resetBtn.addEventListener('click', () => {
+    if (cy) {
+      cy.nodes().removeClass('highlighted affected');
+      cy.fit(undefined, 30);
+    }
+    document.getElementById('m-affected').textContent = '—';
+    document.getElementById('m-loss').textContent = '—';
+    log('View reset.', 'log-info');
+  });
+});
+</script>
+{% endblock %}

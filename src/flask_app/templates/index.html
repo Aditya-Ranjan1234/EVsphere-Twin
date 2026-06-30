@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <!-- Hero Banner -->
+  <div class="ev-hero mb-4 animate-in">
+    <h1>EVSphere Digital Twin<br>Control Portal</h1>
+    <p>Simulate cascading failures, visualise supply‑chain dependencies, and monitor real‑time EV telemetry across the entire ecosystem.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="/digital-twin" class="ev-btn ev-btn-primary">🔬 Digital Twin Room</a>
+      <a href="/graph" class="ev-btn ev-btn-outline">🕸️ Network Graph</a>
+      <a href="/map" class="ev-btn ev-btn-outline">🗺️ Geo‑Map</a>
+      <a href="/predict" class="ev-btn ev-btn-outline">🎯 Simulate Failure</a>
+    </div>
+  </div>
+
+  <!-- Live Metrics Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="metric-card animate-in">
+        <div class="metric-value" id="m-nodes">—</div>
+        <div class="metric-label">Graph Nodes</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="metric-card animate-in" style="animation-delay:0.05s">
+        <div class="metric-value" id="m-edges">—</div>
+        <div class="metric-label">Relationships</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="metric-card animate-in" style="animation-delay:0.1s">
+        <div class="metric-value" id="m-chargers">—</div>
+        <div class="metric-label">Geo Locations</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="metric-card animate-in" style="animation-delay:0.15s">
+        <div class="metric-value text-green">LIVE</div>
+        <div class="metric-label">System Status <span class="status-dot ms-1"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature Grid -->
+  <div class="section-title mb-3">Platform Capabilities</div>
+  <div class="feature-grid mb-4">
+    <div class="feature-card animate-in">
+      <div class="feature-icon">🕸️</div>
+      <div class="feature-title">Neo4j Graph Engine</div>
+      <div class="feature-desc">Supplier → Battery → Vehicle → Charger relationships with typed edges and path queries.</div>
+    </div>
+    <div class="feature-card animate-in" style="animation-delay:0.05s">
+      <div class="feature-icon">🗺️</div>
+      <div class="feature-title">Geospatial Intelligence</div>
+      <div class="feature-desc">Interactive Leaflet map overlaying charger density, service center locations, and factory positions.</div>
+    </div>
+    <div class="feature-card animate-in" style="animation-delay:0.1s">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Cascade Simulation</div>
+      <div class="feature-desc">Sankey‑diagram propagation model estimating revenue impact from any seed‑node failure.</div>
+    </div>
+    <div class="feature-card animate-in" style="animation-delay:0.15s">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">AI/ML Predictions</div>
+      <div class="feature-desc">LightGBM charger‑failure, XGBoost vehicle‑failure, and CatBoost warranty‑risk classifiers.</div>
+    </div>
+    <div class="feature-card animate-in" style="animation-delay:0.2s">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Export Suite</div>
+      <div class="feature-desc">One‑click export to JSON, CSV, GraphML, Cypher, and PNG formats.</div>
+    </div>
+    <div class="feature-card animate-in" style="animation-delay:0.25s">
+      <div class="feature-icon">🐳</div>
+      <div class="feature-title">Docker‑Compose Stack</div>
+      <div class="feature-desc">PostgreSQL + TimescaleDB + Neo4j + Flask, all containerised for instant reproducibility.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Fetch live metrics from API
+fetch('/api/graph')
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('m-nodes').textContent = (d.nodes || []).length;
+    document.getElementById('m-edges').textContent = (d.edges || []).length;
+  }).catch(() => {});
+
+fetch('/api/map')
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('m-chargers').textContent = (d.features || []).length;
+  }).catch(() => {});
+</script>
+{% endblock %}
