@@ -5,8 +5,7 @@
       "src": "src/flask_app/app.py",
       "use": "@vercel/python",
       "config": {
-        "pythonVersion": "3.11",
-        "requirementsPath": "requirements-vercel.txt"
+        "pythonVersion": "3.11"
       }
     }
   ],
