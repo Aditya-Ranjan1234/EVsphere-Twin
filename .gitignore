@@ -8,7 +8,7 @@ __pycache__/
 *.egg-info/
 *.egg
 build/
-dist/
+ dist/
 *.manifest
 *.spec
 *.tmp
@@ -25,3 +25,4 @@ dist/
 /flask_app/static/
 /flask_app/templates/__pycache__/
 .vercel
+/docker/data/neo4j
